@@ -54,19 +54,93 @@ class IndexController extends Controller
                 //回复用户消息
                 $toUser = $postObj->FromUserName;
                 $FromUserName = $postObj->ToUserName;
-                $createTIme = time();
+                $createTime = time();
                 $msgType = 'text';
                 $content = 'hello';
                 $template = "<xml>
-                                <ToUserName><![CDATA[%s]]></ToUserName>
-                                <FromUserName><![CDATA[%s]]></FromUserName>
-                                <CreateTime>%s</CreateTime>
-                                <MsgType><![CDATA[%s]]></MsgType>
-                                <Content><![CDATA[%s]]></Content>
-                                </xml>";
-                $info = sprintf($template, $toUser, $FromUserName, $createTIme, $msgType, $content);
+                            <ToUserName><![CDATA[%s]]></ToUserName>
+                            <FromUserName><![CDATA[%s]]></FromUserName>
+                            <CreateTime>%s</CreateTime>
+                            <MsgType><![CDATA[%s]]></MsgType>
+                            <Content><![CDATA[%s]]></Content>
+                            </xml>";
+                $info = sprintf($template, $toUser, $FromUserName, $createTime, $msgType, $content);
                 echo $info;
             }
+        }
+
+
+        //回复单图文
+        if (strtolower($postObj->MsgType) == 'text' && $postObj->Content == 'tuwen') {
+            $arr = [
+                [
+                    'title' => 'haha',
+                    'description' => '这是单图文',
+                    'picurl' => 'https://ss0.bdstatic.com/70cFuHSh_Q1YnxGkpoWK1HF6hhy/it/u=4258410114,1864035878&fm=27&gp=0.jpg',
+                    'url' => 'www.baidu.com'
+                ]
+            ];
+            $template = "<xml>
+                        <ToUserName><![CDATA[%s]]></ToUserName>
+                        <FromUserName><![CDATA[%s]]></FromUserName>
+                        <CreateTime>%s</CreateTime>
+                        <MsgType><![CDATA[%s]]></MsgType>
+                        <ArticleCount>".count($arr)."</ArticleCount>
+                        <Articles>";
+            foreach($arr as $k => $v) {
+                $template .= "<item>
+                        <Title><![CDATA[".$v['title']."]]></Title>
+                        <Description><![CDATA[".$v['description']."]]></Description>
+                        <PicUrl><![CDATA[".$v['picurl']."]]></PicUrl>
+                        <Url><![CDATA[".$v['url']."]]></Url>
+                        </item>";
+            }
+
+            $template .="</Articles>
+                        </xml>";
+            $toUser = $postObj->FromUserName;
+            $fromUser = $postObj->ToUserName;
+            $createTime = time();
+            $msgType = 'news';
+            echo sprintf($template, $toUser, $fromUser, $createTime, $msgType);
+
+        } else {
+            //微信用户回复文本消息给公众号
+        // <xml>
+        // <ToUserName><![CDATA[toUser]]></ToUserName>
+        // <FromUserName><![CDATA[fromUser]]></FromUserName>
+        // <CreateTime>1348831860</CreateTime>
+        // <MsgType><![CDATA[text]]></MsgType>
+        // <Content><![CDATA[this is a test]]></Content>
+        // <MsgId>1234567890123456</MsgId>
+        // </xml>
+            switch (trim($postObj->Content)) {
+                case 1:
+                    $content = '您输入为１';
+                    break;
+                case 2:
+                    $content = '您输入为2';
+                    break;
+                case 3:
+                    $content = '您输入为3';
+                    break;
+                case 4:
+                    $content = "<a href='www.baidu.com'>百度</a>";
+                    break;
+            }
+            $template = "<xml>
+                        <ToUserName><![CDATA[%s]]></ToUserName>
+                        <FromUserName><![CDATA[%s]]></FromUserName>
+                        <CreateTime>%s</CreateTime>
+                        <MsgType><![CDATA[%s]]></MsgType>
+                        <Content><![CDATA[%s]]></Content>
+                        </xml>";
+            $toUser = $postObj->FromUserName;
+            $fromUser = $postObj->ToUserName;
+            $createTime = time();
+            $msgType = 'text';
+            $info = sprintf($template, $toUser, $fromUser, $createTime, $msgType, $content);
+            echo $info;
         }
     }
 }
