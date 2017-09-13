@@ -143,4 +143,21 @@ class IndexController extends Controller
             echo $info;
         }
     }
+
+    //获取accessToken
+    public function getAccessToken()
+    {
+        $appId = "";
+        $appScript = "";
+        $url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=$appId&secret=$appScript";
+        curlGet($url);
+    }
+
+    //微信服务器地址
+    public function getWxServerIp()
+    {
+        $accessToken = "";
+        $url = "https://api.weixin.qq.com/cgi-bin/getcallbackip?access_token=$accessToken";
+        curlGet($url);
+    }
 }
