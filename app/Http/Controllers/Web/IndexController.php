@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\Weixin;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class IndexController extends Controller
 {
@@ -80,29 +82,8 @@ class IndexController extends Controller
                     'url' => 'www.baidu.com'
                 ]
             ];
-            $template = "<xml>
-                        <ToUserName><![CDATA[%s]]></ToUserName>
-                        <FromUserName><![CDATA[%s]]></FromUserName>
-                        <CreateTime>%s</CreateTime>
-                        <MsgType><![CDATA[%s]]></MsgType>
-                        <ArticleCount>".count($arr)."</ArticleCount>
-                        <Articles>";
-            foreach($arr as $k => $v) {
-                $template .= "<item>
-                        <Title><![CDATA[".$v['title']."]]></Title>
-                        <Description><![CDATA[".$v['description']."]]></Description>
-                        <PicUrl><![CDATA[".$v['picurl']."]]></PicUrl>
-                        <Url><![CDATA[".$v['url']."]]></Url>
-                        </item>";
-            }
-
-            $template .="</Articles>
-                        </xml>";
-            $toUser = $postObj->FromUserName;
-            $fromUser = $postObj->ToUserName;
-            $createTime = time();
-            $msgType = 'news';
-            echo sprintf($template, $toUser, $fromUser, $createTime, $msgType);
+            $wechat = new Weixin();
+            $wechat->responseNews($postObj, $arr);  //抽出公共部分
 
         } else {
             //微信用户回复文本消息给公众号
@@ -147,10 +128,17 @@ class IndexController extends Controller
     //获取accessToken
     public function getAccessToken()
     {
-        $appId = "";
-        $appScript = "";
-        $url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=$appId&secret=$appScript";
-        curlGet($url);
+        if (Cache::get('accessToken')) {
+            return Cache::get('accessToken');
+        } else {
+            $appId = "";
+            $appScript = "";
+            $url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=$appId&secret=$appScript";
+            $res = curlGet($url);
+            Cache::put(['accessToken', $res['access_token']], 7200);
+            return $res['access_token'];
+        }
+
     }
 
     //微信服务器地址
@@ -159,5 +147,62 @@ class IndexController extends Controller
         $accessToken = "";
         $url = "https://api.weixin.qq.com/cgi-bin/getcallbackip?access_token=$accessToken";
         curlGet($url);
+    }
+
+    public function definedItem()
+    {
+        header('content-type:text/html;charset=utf-8');
+        $accessToken = $this->getAccessToken();
+        $url = " https://api.weixin.qq.com/cgi-bin/menu/create?access_token=$accessToken";
+        $postArr = [
+            'button' => [
+                [
+                    'name' => urlencode('菜单一'),           //防止中文转码
+                    'type' => 'click',
+                    'key' => 'item1'
+                ],
+                [
+                    'name' => urlencode('菜单二'),
+                    'sub_button' => [
+                        [
+                            'name' => urlencode('歌曲'),
+                            'type' => 'click',
+                            'key' => 'songs'
+                        ],
+                        [
+                            'name' => urlencode('电影'),
+                            'type' => 'view',
+                            'url' => 'http://www.bing.com'
+                        ]
+                    ]
+                ],
+                [
+                    'name' => urlencode('菜单三'),
+                    'type' => 'view',
+                    'url' => 'http://www.google.com'
+                ]
+            ],
+        ];
+        $postJson = urldecode(json_encode($postArr));
+        $res = curlPost($url, $postJson);
+        var_dump($res);
+    }
+
+    public function sendMsgToAll()
+    {
+        //获取accessToken
+        $accessToken = $this->getAccessToken();
+        $url = "https://api.weixin.qq.com/cgi-bin/message/mass/preview?access_token=$accessToken"; //预览接口
+        $arr = [
+            'touser' => 'openid',
+            'text' => [
+                'content' => '群发消息'
+            ],
+            'msgtype' => 'text'
+        ];
+        //组装接口数据
+        $postJson = json_encode($arr);
+        $res = curlPost($url, $postJson);
+        var_dump($res);
     }
 }
