@@ -205,4 +205,43 @@ class IndexController extends Controller
         $res = curlPost($url, $postJson);
         var_dump($res);
     }
+
+    public function sendTemplateMsg()
+    {
+        //获取accessToken
+        $accessToken = $this->getAccessToken();
+        $url = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=$accessToken";
+        $arr = [
+            'touser' => '',
+            'template_id' => '',  //模板id
+            'url' => '',
+            'data' => [
+                'name' => ['value' => 'hellow', 'color' => ''],
+                'money' => ['value' => 100, 'color' => '']
+            ]
+        ];
+
+        $postJson = json_encode($arr);
+        $res = curlPost($url, $postJson);
+        var_dump($res);
+    }
+
+    public function getBaseInfo()
+    {
+        //获取code
+        $appId = '';
+        $redirectUrl = urlencode(""); //微信会将返回的code发送到此地址上去
+        $url = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=$appId&redirect_uri=$redirectUrl&response_type=code&scope=SCOPE&state=STATE#wechat_redirect";
+        header('location:'. $url);
+    }
+    //详细授权需要再调用一个接口
+    public function getOpenId()
+    {
+        $appId = "";
+        $appSecret = "";
+        $code = "";
+        $url = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=$appId&secret=$appSecret&code=$code&grant_type=authorization_code";
+        $res = curlGet($url);
+
+    }
 }
